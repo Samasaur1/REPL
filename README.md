@@ -5,10 +5,10 @@ A simple CLT to prefix any command with a given one
 ## Installing
 Make sure Xcode 10.2 or higher is installed first.
 
-### Homebrew
+### [Homebrew](https://brew.sh)
 
 ```sh
-$ brew install mint
+$ brew install Samasaur1/core/repl
 ```
 
 ### [Mint](https://github.com/yonaskolb/mint)
