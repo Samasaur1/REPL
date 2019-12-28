@@ -22,46 +22,108 @@ func exec(_ command: String) -> String {
 print("Initializing REPL with command: \(command)")
 print("Use ^D to exit")
 print()
+
+var key: Int = 0
+let c: cc_t = 0
+let cct = (c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c) // Set of 20 Special Characters
+var originalTerm: termios = termios(c_iflag: 0, c_oflag: 0, c_cflag: 0, c_lflag: 0, c_cc: cct, c_ispeed: 0, c_ospeed: 0)
+tcgetattr(STDIN_FILENO, &originalTerm) //this gets the current settings
+var term = originalTerm
+term.c_lflag &= (UInt.max ^ UInt(Darwin.ECHO) ^ UInt(Darwin.ICANON)) //turn off ECHO and ICANON
+tcsetattr(STDIN_FILENO, TCSANOW, &term) //set these new settings
+
+func resetTermAndExitWith(sig: Int32) {
+    tcsetattr(STDIN_FILENO, TCSANOW, &originalTerm)
+    exit(sig)
+}
+signal(SIGKILL, resetTermAndExitWith(sig:))
+signal(SIGTERM, resetTermAndExitWith(sig:))
+signal(SIGQUIT, resetTermAndExitWith(sig:))
+signal(SIGSTOP, resetTermAndExitWith(sig:))
+
+var chars: [Int32] = []
+var commands: [String] = [""]
+var cmdIdx = 0
+
 signal(SIGINT) { _ in
     if task.isRunning {
         task.interrupt()
     } else {
         print()
+        chars = []
+        cmdIdx = 0
         print(cmdPrompt, terminator: "")
         fflush(stdout)
     }
 }
-//func getch() -> Int {
-//    var key: Int = 0
-//    let c: cc_t = 0
-//    let cct = (c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c) // Set of 20 Special Characters
-//    var oldt: termios = termios(c_iflag: 0, c_oflag: 0, c_cflag: 0, c_lflag: 0, c_cc: cct, c_ispeed: 0, c_ospeed: 0)
-//
-//    tcgetattr(STDIN_FILENO, &oldt) // 1473
-//    var newt = oldt
-//    newt.c_lflag = 705//1217  // Reset ICANON and Echo off
-//    tcsetattr( STDIN_FILENO, TCSANOW, &newt)
-//    key = Int(getchar())  // works like "getch()"
-//    tcsetattr( STDIN_FILENO, TCSANOW, &oldt)
-//    return key
-//}
 
-//var buffer = UInt8(Double(getch()))
-//Darwin.write(0, &buffer, 1)
-//fwrite(&buffer, 1, 1, stdin)
-//print(readLine())
+func tputBel() {
+    var v = UInt8(7)
+    write(STDOUT_FILENO, &v, 1)
+}
 
-//STDIN_FILENO
-//Darwin.open(<#T##path: UnsafePointer<CChar>##UnsafePointer<CChar>#>, <#T##oflag: Int32##Int32#>, <#T##mode: mode_t##mode_t#>)
-//fopen(<#T##__filename: UnsafePointer<Int8>!##UnsafePointer<Int8>!#>, <#T##__mode: UnsafePointer<Int8>!##UnsafePointer<Int8>!#>)
 while true {
     print(cmdPrompt, terminator: "")
-//    let codes = (getch(), getch(), getch())
-//    print(getch(), terminator: "")
-    guard let input = readLine() else {
-        print()
-        print("Exiting REPL")
-        exit(0)
+    while true {
+        let c = getchar()
+        if c == 27 {
+            let c2 = getchar()
+            if c2 == 91 {
+                let c3 = getchar()
+                switch c3 {
+                case 65:
+//                    print("↑")
+                    if commands.count > cmdIdx + 1 {
+                        cmdIdx += 1
+                        print("\u{001B}[2K", terminator: "")
+                        print("\r\(cmdPrompt)\(commands[cmdIdx])", terminator: "")
+                    } else {
+                        tputBel()
+                    }
+                case 67:
+//                    print("→")
+                    print("\u{001B}[1C", terminator: "")
+                case 66:
+//                    print("↓")
+                    if cmdIdx >= 1 {
+                        cmdIdx -= 1
+                        print("\u{001B}[2K", terminator: "")
+                        print("\r\(cmdPrompt)\(commands[cmdIdx])", terminator: "")
+                    } else {
+                        tputBel()
+                    }
+                case 68:
+//                    print("←")
+                    print("\u{001B}[1D", terminator: "")
+                default:
+                    print("", terminator: "")
+                }
+            } else {
+                print(Character(UnicodeScalar(UInt32(c))!), terminator: "")
+                chars.append(c)
+                print(Character(UnicodeScalar(UInt32(c2))!), terminator: "")
+                chars.append(c2)
+            }
+        } else if c == 10 {
+            print()
+            if !chars.isEmpty {
+                let input = String(chars.map { Character(UnicodeScalar(UInt32($0))!) })
+                print(exec("\(command) \(input)"), terminator: "")
+                commands.append(input)
+            }
+            chars = []
+            break
+        } else if c == 4 {
+            if chars.isEmpty {
+                print("^D")
+                print("Exiting REPL")
+                resetTermAndExitWith(sig: 0)
+            } else {
+                tputBel()
+            }
+        } else {
+            print(Character(UnicodeScalar(UInt32(c))!), terminator: "")
+            chars.append(c)
+        }
     }
-    print(exec("\(command) \(input)"), terminator: "")
 }
