@@ -3,8 +3,9 @@ import Foundation
 let command = CommandLine.arguments.dropFirst().joined(separator: " ")
 let cmdPrompt = "\u{001B}[38;5;9m[\(NSUserName())]\u{001B}[1;34m(\(FileManager.default.currentDirectoryPath.replacingOccurrences(of: "/Users/\(NSUserName())", with: "~")))\u{001B}[m\u{001B}[1;32m$ \(command)\u{001B}[00m "
 
+var task: Process = Process()
 func exec(_ command: String) -> String {
-    let task = Process()
+    task = Process()
     task.launchPath = "/bin/bash"
     task.arguments = ["-c", command]
     
@@ -22,9 +23,13 @@ print("Initializing REPL with command: \(command)")
 print("Use ^D to exit")
 print()
 signal(SIGINT) { _ in
-    print("\u{001B}[2K", terminator: "")
-    print("\r\(cmdPrompt)", terminator: "")
-    fflush(stdout)
+    if task.isRunning {
+        task.interrupt()
+    } else {
+        print()
+        print(cmdPrompt, terminator: "")
+        fflush(stdout)
+    }
 }
 //func getch() -> Int {
 //    var key: Int = 0
