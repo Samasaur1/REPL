@@ -77,6 +77,7 @@ while true {
                         cmdIdx += 1
                         print("\u{001B}[2K", terminator: "")
                         print("\r\(cmdPrompt)\(commands[cmdIdx])", terminator: "")
+                        chars = commands[cmdIdx].map { Int32($0.unicodeScalars.first!.value) }
                     } else {
                         tputBel()
                     }
@@ -89,6 +90,7 @@ while true {
                         cmdIdx -= 1
                         print("\u{001B}[2K", terminator: "")
                         print("\r\(cmdPrompt)\(commands[cmdIdx])", terminator: "")
+                        chars = commands[cmdIdx].map { Int32($0.unicodeScalars.first!.value) }
                     } else {
                         tputBel()
                     }
