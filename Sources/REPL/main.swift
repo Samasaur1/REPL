@@ -139,11 +139,12 @@ while true {
                 tputBel()
             }
         } else if c == 127 { //backspace/^H
-            print("\u{001B}[1D \u{001B}[1D", terminator: "")
             if chars.isEmpty {
                 tputBel()
             } else {
+                print("\u{001B}[1D \u{001B}[1D", terminator: "")
                 chars.removeLast()
+                charIdx -= 1
             }
         } else {
             print(Character(UnicodeScalar(UInt32(c))!), terminator: "")
