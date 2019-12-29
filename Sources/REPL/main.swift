@@ -114,10 +114,18 @@ while true {
                 }
             } else {
                 print(Character(UnicodeScalar(UInt32(c))!), terminator: "")
-                chars.append(c)
+                if charIdx == chars.count {
+                    chars.append(c)
+                } else {
+                    chars[charIdx] = c
+                }
                 charIdx += 1
                 print(Character(UnicodeScalar(UInt32(c2))!), terminator: "")
-                chars.append(c2)
+                if charIdx == chars.count {
+                    chars.append(c2)
+                } else {
+                    chars[charIdx] = c2
+                }
                 charIdx += 1
             }
         } else if c == 10 { //\n
@@ -148,7 +156,11 @@ while true {
             }
         } else {
             print(Character(UnicodeScalar(UInt32(c))!), terminator: "")
-            chars.append(c)
+            if charIdx == chars.count {
+                chars.append(c)
+            } else {
+                chars[charIdx] = c
+            }
             charIdx += 1
         }
     }
