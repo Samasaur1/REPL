@@ -66,7 +66,7 @@ while true {
     print(cmdPrompt, terminator: "")
     while true {
         let c = getchar()
-        if c == 27 {
+        if c == 27 { //[ (first part of arrow keys)
             let c2 = getchar()
             if c2 == 91 {
                 let c3 = getchar()
@@ -106,7 +106,7 @@ while true {
                 print(Character(UnicodeScalar(UInt32(c2))!), terminator: "")
                 chars.append(c2)
             }
-        } else if c == 10 {
+        } else if c == 10 { //\n
             print()
             if !chars.isEmpty {
                 let input = String(chars.map { Character(UnicodeScalar(UInt32($0))!) })
@@ -115,13 +115,20 @@ while true {
             }
             chars = []
             break
-        } else if c == 4 {
+        } else if c == 4 { //^D
             if chars.isEmpty {
                 print("^D")
                 print("Exiting REPL")
                 resetTermAndExitWith(sig: 0)
             } else {
                 tputBel()
+            }
+        } else if c == 127 { //backspace/^H
+            print("\u{001B}[1D \u{001B}[1D", terminator: "")
+            if chars.isEmpty {
+                tputBel()
+            } else {
+                chars.removeLast()
             }
         } else {
             print(Character(UnicodeScalar(UInt32(c))!), terminator: "")
