@@ -50,7 +50,7 @@ signal(SIGINT) { _ in
     if task.isRunning {
         task.interrupt()
     } else {
-        print()
+        print("^C")
         chars = []
         charIdx = 0
         cmdIdx = 0
