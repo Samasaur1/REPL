@@ -42,6 +42,7 @@ signal(SIGQUIT, resetTermAndExitWith(sig:))
 signal(SIGSTOP, resetTermAndExitWith(sig:))
 
 var chars: [Int32] = []
+var charIdx = 0
 var commands: [String] = [""]
 var cmdIdx = 0
 
@@ -51,6 +52,7 @@ signal(SIGINT) { _ in
     } else {
         print()
         chars = []
+        charIdx = 0
         cmdIdx = 0
         print(cmdPrompt, terminator: "")
         fflush(stdout)
@@ -83,7 +85,12 @@ while true {
                     }
                 case 67:
 //                    print("→")
-                    print("\u{001B}[1C", terminator: "")
+                    if charIdx <= chars.count - 1 {
+                        print("\u{001B}[1C", terminator: "")
+                        charIdx += 1
+                    } else {
+                        tputBel()
+                    }
                 case 66:
 //                    print("↓")
                     if cmdIdx >= 1 {
@@ -96,15 +103,22 @@ while true {
                     }
                 case 68:
 //                    print("←")
-                    print("\u{001B}[1D", terminator: "")
+                    if charIdx > 0 {
+                        print("\u{001B}[1D", terminator: "")
+                        charIdx -= 1
+                    } else {
+                        tputBel()
+                    }
                 default:
                     print("", terminator: "")
                 }
             } else {
                 print(Character(UnicodeScalar(UInt32(c))!), terminator: "")
                 chars.append(c)
+                charIdx += 1
                 print(Character(UnicodeScalar(UInt32(c2))!), terminator: "")
                 chars.append(c2)
+                charIdx += 1
             }
         } else if c == 10 { //\n
             print()
@@ -114,6 +128,7 @@ while true {
                 commands.append(input)
             }
             chars = []
+            charIdx = 0
             break
         } else if c == 4 { //^D
             if chars.isEmpty {
@@ -133,6 +148,7 @@ while true {
         } else {
             print(Character(UnicodeScalar(UInt32(c))!), terminator: "")
             chars.append(c)
+            charIdx += 1
         }
     }
 }
