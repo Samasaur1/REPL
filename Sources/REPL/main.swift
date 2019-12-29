@@ -147,12 +147,30 @@ while true {
                 tputBel()
             }
         } else if c == 127 { //backspace/^H
-            if chars.isEmpty {
+            if chars.isEmpty || charIdx == 0 {
                 tputBel()
             } else {
-                print("\u{001B}[1D \u{001B}[1D", terminator: "")
-                chars.removeLast()
+                print("\u{001B}[1D", terminator: "")
+                print(String(chars[charIdx..<chars.endIndex].map { Character(UnicodeScalar(UInt32($0))!) }), terminator: "")
+                print(" ", terminator: "")//clear line from cursor to end of line
+                    //I'm aware there is an ANSI control code to do this to end of the line,
+                    //  but I'm just deleting one character, so I only need to overwrite one char.
+                for _ in 0..<(chars[charIdx..<chars.endIndex].count + 1) {//'go back' for every character that was printed
+                    print("\u{001B}[1D", terminator: "")
+                }
+                chars.remove(at: charIdx - 1)
                 charIdx -= 1
+
+                //This should have worked, but it didn't.
+//                print("\u{001B}[1D", terminator: "")
+//                print("\u{001B}[s", terminator: "")//store cursor position
+//                print(String(chars[charIdx..<chars.endIndex].map { Character(UnicodeScalar(UInt32($0))!) }), terminator: "")
+//                print(" ", terminator: "")//clear line from cursor to end of line
+//                    //I'm aware there is an ANSI control code to do this to end of the line,
+//                    //  but I'm just deleting one character, so I only need to overwrite one char.
+//                print("\u{001B}[u", terminator: "")//load cursor position
+//                chars.remove(at: charIdx - 1)
+//                charIdx -= 1
             }
         } else {
             print(Character(UnicodeScalar(UInt32(c))!), terminator: "")
