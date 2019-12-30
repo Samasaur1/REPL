@@ -29,7 +29,7 @@ let cct = (c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c) // Set of
 var originalTerm: termios = termios(c_iflag: 0, c_oflag: 0, c_cflag: 0, c_lflag: 0, c_cc: cct, c_ispeed: 0, c_ospeed: 0)
 tcgetattr(STDIN_FILENO, &originalTerm) //this gets the current settings
 var term = originalTerm
-term.c_lflag &= (UInt.max ^ UInt(Darwin.ECHO) ^ UInt(Darwin.ICANON)) //turn off ECHO and ICANON
+term.c_lflag &= ~(UInt(Darwin.ECHO) | UInt(Darwin.ICANON)) //turn off ECHO and ICANON
 tcsetattr(STDIN_FILENO, TCSANOW, &term) //set these new settings
 
 func resetTermAndExitWith(sig: Int32) {
