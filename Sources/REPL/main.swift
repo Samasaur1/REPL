@@ -39,7 +39,7 @@ let c_args = args.map { $0.withCString(strdup)! }
 defer { for arg in c_args { free(arg) } }
 
 var pid = pid_t()
-let rv = posix_spawnp(&pid, c_args[0], &action, nil, c_args + [nil], environ)
+let rv = posix_spawn(&pid, c_args[0], &action, nil, c_args + [nil], environ)
 guard rv == 0 else {
   // Should get errno
   exit(1)
