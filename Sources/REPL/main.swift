@@ -71,7 +71,7 @@ let convertedPS1 = rawPS1.replacingOccurrences(of: #"\033"#, with: "\u{001B}").r
                         //\@   The time, in 12-hour am/pm format.
                         .replacingOccurrences(of: #"\u"#, with: ProcessInfo.processInfo.userName)
                         .replacingOccurrences(of: #"\v"#, with: "1.0") //version major.minor, no patch
-                        .replacingOccurrences(of: #"\v"#, with: "1.0.0") //version major.minor.patch
+                        .replacingOccurrences(of: #"\V"#, with: "1.0.0") //version major.minor.patch
                         //.replacingOccurrences(of: #"\!"#, with: "1.0") //history number
                         //.replacingOccurrences(of: #"\#"#, with: "1.0") //command number (i.e. length of commands list)
                         //.replacingOccurrences(of: #"\$"#, with: "1.0") //'#' iff root else '$'
