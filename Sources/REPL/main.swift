@@ -1,30 +1,5 @@
 import Foundation
 
-let command = CommandLine.arguments.dropFirst().joined(separator: " ")
-//func posix_exec(_ args: [String]) {
-//    var pid: pid_t = 0
-//    let args = ["/usr/bin/env", "bash", "-i", "-c", #"echo "$PS1""#]
-//    let c_args = args.map { $0.withCString(strdup)! }
-//    posix_spawn(&pid, c_args[0], nil, nil, c_args + [nil], environ)
-//    waitpid(pid, nil, 0)
-//}
-
-var task: Process = Process()
-func exec(_ command: String) -> String {
-    task = Process()
-    task.launchPath = "/bin/bash"
-    task.arguments = ["-c", command]
-    
-    let pipe = Pipe()
-    task.standardOutput = pipe
-    task.launch()
-    
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    let output: String = NSString(data: data, encoding: String.Encoding.utf8.rawValue)! as String
-    
-    return output
-}
-
 // MARK: - Extract PS1
 //   (via `bash -i -c 'echo "$PS1"'`)
 var action: posix_spawn_file_actions_t? = nil
@@ -44,7 +19,7 @@ guard rv == 0 else {
   // Should get errno
   exit(1)
 }
-print(pid)
+//print(pid)
 
 var exitCode: Int32 = 0
 waitpid(pid, &exitCode, 0)
@@ -75,8 +50,118 @@ let convertedPS1 = rawPS1.replacingOccurrences(of: #"\033"#, with: "\u{001B}").r
                         //.replacingOccurrences(of: #"\!"#, with: "1.0") //history number
                         //.replacingOccurrences(of: #"\#"#, with: "1.0") //command number (i.e. length of commands list)
                         //.replacingOccurrences(of: #"\$"#, with: "1.0") //'#' iff root else '$'
-print(convertedPS1)
-let cmdPrompt = convertedPS1 + "\u{001B}[1;32m\(command)\u{001B}[00m "
+
+//MARK: - Build command prompt function
+struct ReplacingDate {
+    let replacing: Bool
+    let df: DateFormatter!
+    init(_ b: Bool) {
+        self.replacing = b
+        if b {
+            df = DateFormatter()
+            df!.dateFormat = "E MMM d"
+        } else {
+            df = nil
+        }
+    }
+    func str() -> String {
+        df!.string(from: Date())
+    }
+}
+let replacingDate = ReplacingDate(convertedPS1.contains(#"\d"#))
+struct ReplacingTime_t {
+    let replacing: Bool
+    let df: DateFormatter!
+    init(_ b: Bool) {
+        self.replacing = b
+        if b {
+            df = DateFormatter()
+            df!.dateFormat = "HH:mm:ss"
+        } else {
+            df = nil
+        }
+    }
+    func str() -> String {
+        df!.string(from: Date())
+    }
+}
+let replacingTime_t = ReplacingTime_t(convertedPS1.contains(#"\t"#))
+struct ReplacingTime_T {
+    let replacing: Bool
+    let df: DateFormatter!
+    init(_ b: Bool) {
+        self.replacing = b
+        if b {
+            df = DateFormatter()
+            df!.dateFormat = "hh:mm:ss"
+        } else {
+            df = nil
+        }
+    }
+    func str() -> String {
+        df!.string(from: Date())
+    }
+}
+let replacingTime_T = ReplacingTime_T(convertedPS1.contains(#"\T"#))
+struct ReplacingTime_at {
+    let replacing: Bool
+    let df: DateFormatter!
+    init(_ b: Bool) {
+        self.replacing = b
+        if b {
+            df = DateFormatter()
+            df!.dateFormat = "hh:mm a"
+        } else {
+            df = nil
+        }
+    }
+    func str() -> String {
+        df!.string(from: Date())
+    }
+}
+let replacingTime_at = ReplacingTime_at(convertedPS1.contains(#"\@"#))
+let command = CommandLine.arguments.dropFirst().joined(separator: " ")
+func prompt() -> String {
+    var inProgressPS1 = convertedPS1
+    if replacingDate.replacing {
+        inProgressPS1 = inProgressPS1.replacingOccurrences(of: #"\d"#, with: replacingDate.str())
+    }
+    if replacingTime_t.replacing {
+        inProgressPS1 = inProgressPS1.replacingOccurrences(of: #"\t"#, with: replacingTime_t.str())
+    }
+    if replacingTime_T.replacing {
+        inProgressPS1 = inProgressPS1.replacingOccurrences(of: #"\T"#, with: replacingTime_T.str())
+    }
+    if replacingTime_at.replacing {
+        inProgressPS1 = inProgressPS1.replacingOccurrences(of: #"\@"#, with: replacingTime_at.str())
+    }
+    return inProgressPS1 + "\u{001B}[1;32m\(command)\u{001B}[00m "
+}
+
+//MARK: - Functions to actually call commands
+//func posix_exec(_ args: [String]) {
+//    var pid: pid_t = 0
+//    let args = ["/usr/bin/env", "bash", "-i", "-c", #"echo "$PS1""#]
+//    let c_args = args.map { $0.withCString(strdup)! }
+//    posix_spawn(&pid, c_args[0], nil, nil, c_args + [nil], environ)
+//    waitpid(pid, nil, 0)
+//}
+
+var task: Process = Process()
+func exec(_ command: String) -> String {
+    task = Process()
+    task.launchPath = "/bin/bash"
+    task.arguments = ["-c", command]
+    
+    let pipe = Pipe()
+    task.standardOutput = pipe
+    task.launch()
+    
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let output: String = NSString(data: data, encoding: String.Encoding.utf8.rawValue)! as String
+    
+    return output
+}
 
 // MARK: - Begin REPL
 print("Initializing REPL with command: \(command)")
@@ -114,7 +199,7 @@ signal(SIGINT) { _ in
         chars = []
         charIdx = 0
         cmdIdx = 0
-        print(cmdPrompt, terminator: "")
+        print(prompt(), terminator: "")
         fflush(stdout)
     }
 }
@@ -125,7 +210,7 @@ func tputBel() {
 }
 
 while true {
-    print(cmdPrompt, terminator: "")
+    print(prompt(), terminator: "")
     while true {
         let c = getchar()
         if c == 27 { //[ (first part of arrow keys)
@@ -138,7 +223,7 @@ while true {
                     if commands.count > cmdIdx + 1 {
                         cmdIdx += 1
                         print("\u{001B}[2K", terminator: "")
-                        print("\r\(cmdPrompt)\(commands[cmdIdx])", terminator: "")
+                        print("\r\(prompt())\(commands[cmdIdx])", terminator: "")
                         chars = commands[cmdIdx].map { Int32($0.unicodeScalars.first!.value) }
                     } else {
                         tputBel()
@@ -156,7 +241,7 @@ while true {
                     if cmdIdx >= 1 {
                         cmdIdx -= 1
                         print("\u{001B}[2K", terminator: "")
-                        print("\r\(cmdPrompt)\(commands[cmdIdx])", terminator: "")
+                        print("\r\(prompt())\(commands[cmdIdx])", terminator: "")
                         chars = commands[cmdIdx].map { Int32($0.unicodeScalars.first!.value) }
                     } else {
                         tputBel()
