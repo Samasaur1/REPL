@@ -1,5 +1,9 @@
 import Foundation
 
+let MAJOR_VERSION = 1
+let MINOR_VERSION = 1
+let PATCH_VERSION = 0
+
 // MARK: - Extract PS1
 //   (via `bash -i -c 'echo "$PS1"'`)
 var action: posix_spawn_file_actions_t? = nil
@@ -45,8 +49,8 @@ let convertedPS1 = rawPS1.replacingOccurrences(of: #"\033"#, with: "\u{001B}").r
                         //\T   The time, in 12-hour HH:MM:SS format. 
                         //\@   The time, in 12-hour am/pm format.
                         .replacingOccurrences(of: #"\u"#, with: ProcessInfo.processInfo.userName)
-                        .replacingOccurrences(of: #"\v"#, with: "1.0") //version major.minor, no patch
-                        .replacingOccurrences(of: #"\V"#, with: "1.0.0") //version major.minor.patch
+                        .replacingOccurrences(of: #"\v"#, with: "\(MAJOR_VERSION).\(MINOR_VERSION)") //version major.minor, no patch
+                        .replacingOccurrences(of: #"\V"#, with: "\(MAJOR_VERSION).\(MINOR_VERSION).\(PATCH_VERSION)") //version major.minor.patch
                         //.replacingOccurrences(of: #"\!"#, with: "1.0") //history number
                         //.replacingOccurrences(of: #"\#"#, with: "1.0") //command number (i.e. length of commands list)
                         .replacingOccurrences(of: #"\$"#, with: getuid() == 0 ? "#" : "$") //'#' iff root else '$'
