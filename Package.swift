@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "REPL",
     products: [
-        .executable(name: "REPL", targets: ["REPL"]),
+        .executable(name: "repl", targets: ["REPL"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.

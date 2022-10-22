@@ -2,7 +2,7 @@ import Foundation
 
 let MAJOR_VERSION = 2
 let MINOR_VERSION = 1
-let PATCH_VERSION = 0
+let PATCH_VERSION = 1
 
 // MARK: - Extract PS1
 //   (via `bash -i -c 'echo "$PS1"'`)
