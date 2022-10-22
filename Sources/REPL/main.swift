@@ -49,7 +49,7 @@ let convertedPS1 = rawPS1.replacingOccurrences(of: #"\033"#, with: "\u{001B}").r
                         .replacingOccurrences(of: #"\V"#, with: "1.0.0") //version major.minor.patch
                         //.replacingOccurrences(of: #"\!"#, with: "1.0") //history number
                         //.replacingOccurrences(of: #"\#"#, with: "1.0") //command number (i.e. length of commands list)
-                        //.replacingOccurrences(of: #"\$"#, with: "1.0") //'#' iff root else '$'
+                        .replacingOccurrences(of: #"\$"#, with: getuid() == 0 ? "#" : "$") //'#' iff root else '$'
 
 //MARK: - Build command prompt function
 struct ReplacingDate {
