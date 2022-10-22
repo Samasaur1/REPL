@@ -42,7 +42,7 @@ let convertedPS1 = rawPS1.replacingOccurrences(of: #"\033"#, with: "\u{001B}").r
                         .replacingOccurrences(of: #"\h"#, with: ProcessInfo.processInfo.hostName)
                         .replacingOccurrences(of: #"\H"#, with: ProcessInfo.processInfo.hostName)
                         .replacingOccurrences(of: #"\j"#, with: "0") //jobs — since we won't allow backgrounding, always 0
-                        .replacingOccurrences(of: #"\l"#, with: "[repl]") //"The basename of the shell's terminal device name." We don't have one
+                        .replacingOccurrences(of: #"\l"#, with: String(cString: ttyname(STDIN_FILENO)).split(separator: "/").last!) //"The basename of the shell's terminal device name."
                         .replacingOccurrences(of: #"\s"#, with: CommandLine.arguments[0].split(separator: "/").last!) //"The name of the shell, the basename of $0 (the portion following the final slash)."
                         //.replOcc("t", "T", "@") //time, must be done every time we print prompt
                         //\t   The time, in 24-hour HH:MM:SS format. 
