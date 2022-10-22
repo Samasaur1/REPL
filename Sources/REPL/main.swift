@@ -1,6 +1,6 @@
 import Foundation
 
-let MAJOR_VERSION = 1
+let MAJOR_VERSION = 2
 let MINOR_VERSION = 1
 let PATCH_VERSION = 0
 
