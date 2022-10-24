@@ -184,13 +184,9 @@ print()
 
 var originalTerm = termios()
 tcgetattr(STDIN_FILENO, &originalTerm) //this gets the current settings
-    print(originalTerm.c_lflag & UInt(ECHO))
-    print(originalTerm.c_lflag & UInt(ICANON))
 var term = originalTerm
 term.c_lflag &= ~(UInt(Darwin.ECHO) | UInt(Darwin.ICANON)) //turn off ECHO and ICANON
 tcsetattr(STDIN_FILENO, TCSANOW, &term) //set these new settings
-dump(originalTerm)
-dump(term)
 
 var __t = termios()
 
@@ -224,21 +220,14 @@ func exec(_ command: String) -> String {
     let c_args = args.map { $0.withCString(strdup)! }
     defer { for arg in c_args { free(arg) } }
     tcgetattr(STDIN_FILENO, &__t)
-    dump(__t)
-    print(__t.c_lflag & UInt(ECHO))
-    print(__t.c_lflag & UInt(ICANON))
-    //__t.c_lflag |= 
-    tcsetattr(STDIN_FILENO, TCSANOW, &originalTerm)
-    tcgetattr(STDIN_FILENO, &__t)
-    dump(__t)
-    print(__t.c_lflag & UInt(ECHO))
-    print(__t.c_lflag & UInt(ICANON))
+    __t.c_lflag |= (UInt(ECHO) | UInt(ICANON))
+    //tcsetattr(STDIN_FILENO, TCSANOW, &originalTerm)
+    tcsetattr(STDIN_FILENO, TCSANOW, &__t)
     posix_spawn(&pid, c_args[0], nil, nil, c_args + [nil], environ)
-    tcsetattr(STDIN_FILENO, TCSANOW, &term)
     tcgetattr(STDIN_FILENO, &__t)
-    dump(__t)
-    print(__t.c_lflag & UInt(ECHO))
-    print(__t.c_lflag & UInt(ICANON))
+    __t.c_lflag &= ~(UInt(ECHO) | UInt(ICANON))
+    //tcsetattr(STDIN_FILENO, TCSANOW, &term)
+    tcsetattr(STDIN_FILENO, TCSANOW, &__t)
     waitpid(pid, nil, 0)
     return ""
 }
