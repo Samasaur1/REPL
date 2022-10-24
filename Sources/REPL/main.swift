@@ -131,7 +131,7 @@ struct ReplacingTime_at {
 }
 let replacingTime_at = ReplacingTime_at(convertedPS1.contains(#"\@"#))
 let aliases: [String: String]
-if let d = try? Data(contentsOf: .init(fileURLWithPath: "\(NSHomeDirectory())/.config/repl/aliases.json")) {
+if let d = try? Data(contentsOf: FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config").appendingPathComponent("repl").appendingPathComponent("aliases.json")) {
     if let dict = try? JSONDecoder().decode([String: String].self, from: d) {
         aliases = dict
     } else { aliases = [:] }
