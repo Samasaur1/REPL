@@ -1,8 +1,14 @@
 import Foundation
 
 let MAJOR_VERSION = 2
-let MINOR_VERSION = 1
-let PATCH_VERSION = 1
+let MINOR_VERSION = 2
+let PATCH_VERSION = 0
+
+guard CommandLine.argc > 1 else {
+    print("Without passing any arguments to REPL, you would enter what is essentially a less-featured, slower bash.")
+    print("This is not currently supported — exiting")
+    exit(1)
+}
 
 // MARK: - Extract PS1
 //   (via `bash -i -c 'echo "$PS1"'`)
@@ -124,7 +130,27 @@ struct ReplacingTime_at {
     }
 }
 let replacingTime_at = ReplacingTime_at(convertedPS1.contains(#"\@"#))
-let command = CommandLine.arguments.dropFirst().joined(separator: " ")
+let aliases: [String: String]
+if let d = try? Data(contentsOf: .init(fileURLWithPath: "\(NSHomeDirectory())/.config/repl/aliases.json")) {
+    if let dict = try? JSONDecoder().decode([String: String].self, from: d) {
+        aliases = dict
+    } else { aliases = [:] }
+} else { aliases = [:] }
+func resolveAlias(_ args: [String]) -> String {
+    let str = args.joined(separator: " ")
+    return aliases[str, default: str]
+}
+let command: String
+switch CommandLine.arguments[1] {
+    case "--no-alias":
+        guard CommandLine.argc > 2 else {
+            print("You must pass a command to `--no-alias`")
+            exit(1)
+        }
+        command = CommandLine.arguments[2...].joined(separator: " ")
+    default:
+        command = resolveAlias(Array(CommandLine.arguments[1...]))
+}
 func prompt() -> String {
     var inProgressPS1 = convertedPS1
     if replacingDate.replacing {
