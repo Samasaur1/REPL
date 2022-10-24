@@ -177,8 +177,35 @@ func prompt() -> String {
 //    waitpid(pid, nil, 0)
 //}
 
+// MARK: - Begin REPL
+print("Initializing REPL with command: \(command)")
+print("Use ^D to exit")
+print()
+
+var originalTerm = termios()
+tcgetattr(STDIN_FILENO, &originalTerm) //this gets the current settings
+    print(originalTerm.c_lflag & UInt(ECHO))
+    print(originalTerm.c_lflag & UInt(ICANON))
+var term = originalTerm
+term.c_lflag &= ~(UInt(Darwin.ECHO) | UInt(Darwin.ICANON)) //turn off ECHO and ICANON
+tcsetattr(STDIN_FILENO, TCSANOW, &term) //set these new settings
+dump(originalTerm)
+dump(term)
+
+var __t = termios()
+
+func resetTermAndExitWith(sig: Int32) {
+    tcsetattr(STDIN_FILENO, TCSANOW, &originalTerm)
+    exit(sig)
+}
+signal(SIGKILL, resetTermAndExitWith(sig:))
+signal(SIGTERM, resetTermAndExitWith(sig:))
+signal(SIGQUIT, resetTermAndExitWith(sig:))
+signal(SIGSTOP, resetTermAndExitWith(sig:))
+
 var task: Process = Process()
 func exec(_ command: String) -> String {
+    /*
     task = Process()
     task.launchPath = "/bin/bash"
     task.arguments = ["-c", command]
@@ -191,30 +218,31 @@ func exec(_ command: String) -> String {
     let output: String = NSString(data: data, encoding: String.Encoding.utf8.rawValue)! as String
     
     return output
-}
-
-// MARK: - Begin REPL
-print("Initializing REPL with command: \(command)")
-print("Use ^D to exit")
-print()
-
-var key: Int = 0
-let c: cc_t = 0
-let cct = (c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c) // Set of 20 Special Characters
-var originalTerm: termios = termios(c_iflag: 0, c_oflag: 0, c_cflag: 0, c_lflag: 0, c_cc: cct, c_ispeed: 0, c_ospeed: 0)
-tcgetattr(STDIN_FILENO, &originalTerm) //this gets the current settings
-var term = originalTerm
-term.c_lflag &= ~(UInt(Darwin.ECHO) | UInt(Darwin.ICANON)) //turn off ECHO and ICANON
-tcsetattr(STDIN_FILENO, TCSANOW, &term) //set these new settings
-
-func resetTermAndExitWith(sig: Int32) {
+    */
+    var pid = pid_t()
+    let args = ["/usr/bin/env"] + command.split(separator: " ").map(String.init)
+    let c_args = args.map { $0.withCString(strdup)! }
+    defer { for arg in c_args { free(arg) } }
+    tcgetattr(STDIN_FILENO, &__t)
+    dump(__t)
+    print(__t.c_lflag & UInt(ECHO))
+    print(__t.c_lflag & UInt(ICANON))
+    //__t.c_lflag |= 
     tcsetattr(STDIN_FILENO, TCSANOW, &originalTerm)
-    exit(sig)
+    tcgetattr(STDIN_FILENO, &__t)
+    dump(__t)
+    print(__t.c_lflag & UInt(ECHO))
+    print(__t.c_lflag & UInt(ICANON))
+    posix_spawn(&pid, c_args[0], nil, nil, c_args + [nil], environ)
+    tcsetattr(STDIN_FILENO, TCSANOW, &term)
+    tcgetattr(STDIN_FILENO, &__t)
+    dump(__t)
+    print(__t.c_lflag & UInt(ECHO))
+    print(__t.c_lflag & UInt(ICANON))
+    waitpid(pid, nil, 0)
+    return ""
 }
-signal(SIGKILL, resetTermAndExitWith(sig:))
-signal(SIGTERM, resetTermAndExitWith(sig:))
-signal(SIGQUIT, resetTermAndExitWith(sig:))
-signal(SIGSTOP, resetTermAndExitWith(sig:))
+
 
 var chars: [Int32] = []
 var charIdx = 0
@@ -307,7 +335,8 @@ while true {
             print()
             if !chars.isEmpty {
                 let input = String(chars.map { Character(UnicodeScalar(UInt32($0))!) })
-                print(exec("\(command) \(input)"), terminator: "")
+                //print(exec("\(command) \(input)"), terminator: "")
+                exec("\(command) \(input)")
                 commands.append(input)
             }
             chars = []
